@@ -1,30 +1,28 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import BaseButton from '@/components/BaseButton.vue'
-import type { Participant } from '@/types/participant'
+import type { User } from '@/types/user'
 
-type SortKey = 'name' | 'birthDate'
+type SortKey = 'name' | 'age'
 type SortDirection = 'asc' | 'desc'
 
-//  Props і події
-
-const { participants } = defineProps<{
-  participants: Participant[]
+const { participants, startIndex = 0 } = defineProps<{
+  participants: User[]
+  startIndex?: number
 }>()
 
-// таблиця сама нічого не змінює, тільки повідомляє App
 const emit = defineEmits<{
-  edit: [participant: Participant]
-  delete: [participant: Participant]
+  edit: [user: User]
+  delete: [user: User]
 }>()
 
-//  Сортування
+function getFullName(user: User): string {
+  return `${user.firstName} ${user.lastName}`
+}
 
-// null - без сортування, в порядку додавання
 const sortKey = ref<SortKey | null>(null)
 const sortDirection = ref<SortDirection>('asc')
 
-// якщо натиснути на ту саму колонку ще раз - міняється напрямок
 function toggleSort(key: SortKey): void {
   if (sortKey.value === key) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -34,24 +32,24 @@ function toggleSort(key: SortKey): void {
   }
 }
 
-// сортую копію, щоб не чіпати вихідний список
 const sortedParticipants = computed(() => {
   const key = sortKey.value
   if (!key) {
     return participants
   }
   const direction = sortDirection.value === 'asc' ? 1 : -1
-  return [...participants].sort((a, b) => a[key].localeCompare(b[key]) * direction)
+  return [...participants].sort((a, b) => {
+    const result = key === 'name' ? getFullName(a).localeCompare(getFullName(b)) : a.age - b.age
+    return result * direction
+  })
 })
-
-//  Іконки сортування
 
 function getSortIcon(key: SortKey): string {
   const isDesc = sortKey.value === key && sortDirection.value === 'desc'
   if (key === 'name') {
     return isDesc ? 'bi-sort-alpha-up' : 'bi-sort-alpha-down'
   }
-  return isDesc ? 'bi-sort-up' : 'bi-sort-down'
+  return isDesc ? 'bi-sort-numeric-up' : 'bi-sort-numeric-down'
 }
 </script>
 
@@ -75,12 +73,13 @@ function getSortIcon(key: SortKey): string {
             <button
               type="button"
               class="sort-button"
-              :class="{ 'sort-button--active': sortKey === 'birthDate' }"
-              @click="toggleSort('birthDate')"
+              :class="{ 'sort-button--active': sortKey === 'age' }"
+              @click="toggleSort('age')"
             >
-              Date of Birth <i class="bi" :class="getSortIcon('birthDate')"></i>
+              Age <i class="bi" :class="getSortIcon('age')"></i>
             </button>
           </th>
+          <th scope="col">Gender</th>
           <th scope="col">Email</th>
           <th scope="col">Phone number</th>
           <th scope="col"></th>
@@ -88,20 +87,26 @@ function getSortIcon(key: SortKey): string {
         </tr>
       </thead>
 
+      <!-- Users rows -->
       <tbody>
-        <tr v-for="(participant, index) in sortedParticipants" :key="participant.id">
-          <td class="text-muted">{{ index + 1 }}</td>
-          <td>{{ participant.name }}</td>
-          <td>{{ participant.birthDate }}</td>
-          <td>{{ participant.email }}</td>
-          <td>{{ participant.phone }}</td>
+        <tr v-for="(user, index) in sortedParticipants" :key="user.id">
+          <td class="text-muted">{{ startIndex + index + 1 }}</td>
           <td>
-            <BaseButton size="sm" variant="outline-primary" @click="emit('edit', participant)">
+            <RouterLink :to="{ name: 'user-details', params: { id: user.id } }">
+              {{ getFullName(user) }}
+            </RouterLink>
+          </td>
+          <td>{{ user.age }}</td>
+          <td class="text-capitalize">{{ user.gender }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.phone }}</td>
+          <td>
+            <BaseButton size="sm" variant="outline-primary" @click="emit('edit', user)">
               Edit data
             </BaseButton>
           </td>
           <td>
-            <BaseButton size="sm" variant="outline-danger" @click="emit('delete', participant)">
+            <BaseButton size="sm" variant="outline-danger" @click="emit('delete', user)">
               Delete participant
             </BaseButton>
           </td>
@@ -112,6 +117,7 @@ function getSortIcon(key: SortKey): string {
 </template>
 
 <style scoped lang="scss">
+// щоб текст у клітинках не переносився
 .participants-table {
   th,
   td {
@@ -119,6 +125,7 @@ function getSortIcon(key: SortKey): string {
   }
 }
 
+// заголовки сортування виглядають як звичайний текст
 .sort-button {
   padding: 0;
   border: 0;
