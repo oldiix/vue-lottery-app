@@ -88,6 +88,17 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
+  async function getUser(id: number): Promise<User> {
+    const localUser = findCreatedUser(id) ?? updatedUsers.value[id]
+    if (localUser) {
+      return localUser
+    }
+    if (deletedIds.value.includes(id)) {
+      throw new Error('User not found')
+    }
+    return ServiceProvider.users.getById(id)
+  }
+
   async function addUser(data: CreateUserDto): Promise<void> {
     const created = await ServiceProvider.users.create(data)
     const user: User = { ...created, id: Date.now() }
@@ -135,6 +146,7 @@ export const useUsersStore = defineStore('users', () => {
     winners,
     canAddWinner,
     fetchUsers,
+    getUser,
     addUser,
     updateUser,
     removeUser,
