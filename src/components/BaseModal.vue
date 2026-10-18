@@ -11,7 +11,6 @@ const emit = defineEmits<{
 
 const modalRef = useTemplateRef<HTMLDivElement>('modal')
 
-// Фокус на модальному вікні, щоб Esc спрацював одразу
 onMounted(() => {
   modalRef.value?.focus()
 })
