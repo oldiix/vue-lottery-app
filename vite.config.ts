@@ -6,6 +6,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // відносні шляхи, щоб збірка працювала на gh-pages за адресою /vue-lottery-app/
+  base: './',
   plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
