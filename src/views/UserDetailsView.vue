@@ -100,7 +100,7 @@ const isEditing = computed(() => route.name === 'user-edit')
         <dl class="user-details">
           <template v-for="row in details" :key="row.label">
             <dt>{{ row.label }}</dt>
-            <dd class="text-capitalize-first">{{ row.value }}</dd>
+            <dd>{{ row.value }}</dd>
           </template>
         </dl>
 
@@ -119,7 +119,7 @@ const isEditing = computed(() => route.name === 'user-edit')
       </div>
     </section>
 
-    <RouterView />
+    <RouterView :user="user" @updated="user = $event" />
   </template>
 </template>
 
@@ -141,7 +141,6 @@ const isEditing = computed(() => route.name === 'user-edit')
   }
 }
 
-// назва поля зліва, значення справа
 .user-details {
   display: grid;
   grid-template-columns: 140px 1fr;
