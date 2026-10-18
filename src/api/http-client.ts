@@ -1,4 +1,5 @@
 import { tokenStorage } from '@/api/token-storage'
+import { ServiceProvider } from '@/services/service-provider'
 
 const BASE_URL = import.meta.env.VITE_API_URL
 
@@ -25,6 +26,53 @@ async function getErrorMessage(response: Response): Promise<string> {
   }
 }
 
+type AuthFailureHandler = () => void
+
+let onAuthFailure: AuthFailureHandler | null = null
+// один спільний запит на refresh, якщо кілька запитів отримали 401 одночасно
+let refreshPromise: Promise<boolean> | null = null
+
+export function setAuthFailureHandler(handler: AuthFailureHandler): void {
+  onAuthFailure = handler
+}
+
+async function refreshTokens(): Promise<boolean> {
+  const refreshToken = tokenStorage.getRefreshToken()
+  if (!refreshToken) {
+    return false
+  }
+
+  try {
+    const data = await ServiceProvider.auth.refresh(refreshToken)
+    tokenStorage.setTokens(data.accessToken, data.refreshToken)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function refreshOnce(): Promise<boolean> {
+  refreshPromise ??= refreshTokens().finally(() => {
+    refreshPromise = null
+  })
+  return refreshPromise
+}
+
+function sendRequest(
+  path: string,
+  init: RequestInit,
+  headers: Headers,
+  auth: boolean,
+): Promise<Response> {
+  if (auth) {
+    const token = tokenStorage.getAccessToken()
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
+  }
+  return fetch(`${BASE_URL}${path}`, { ...init, headers })
+}
+
 export async function http<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { auth = false, headers, ...init } = options
   const requestHeaders = new Headers(headers)
@@ -33,14 +81,18 @@ export async function http<T>(path: string, options: RequestOptions = {}): Promi
     requestHeaders.set('Content-Type', 'application/json')
   }
 
-  if (auth) {
-    const token = tokenStorage.getAccessToken()
-    if (token) {
-      requestHeaders.set('Authorization', `Bearer ${token}`)
+  let response = await sendRequest(path, init, requestHeaders, auth)
+
+  // interceptor: при 401 оновлюю accessToken і повторюю запит один раз
+  if (response.status === 401 && auth) {
+    const isRefreshed = await refreshOnce()
+    if (isRefreshed) {
+      response = await sendRequest(path, init, requestHeaders, auth)
+    } else {
+      tokenStorage.clear()
+      onAuthFailure?.()
     }
   }
-
-  const response = await fetch(`${BASE_URL}${path}`, { ...init, headers: requestHeaders })
 
   if (!response.ok) {
     throw new HttpError(response.status, await getErrorMessage(response))
