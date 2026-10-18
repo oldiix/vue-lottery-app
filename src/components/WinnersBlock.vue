@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import BaseButton from '@/components/BaseButton.vue'
 import WinnerItem from '@/components/WinnerItem.vue'
-import type { Participant } from '@/types/participant'
+import type { User } from '@/types/user'
 
 const { winners, canAddWinner } = defineProps<{
-  winners: Participant[]
+  winners: User[]
   canAddWinner: boolean
 }>()
 
@@ -20,11 +20,12 @@ const emit = defineEmits<{
       <WinnerItem
         v-for="winner in winners"
         :key="winner.id"
-        :name="winner.name"
+        :name="`${winner.firstName} ${winner.lastName}`"
         @remove="emit('remove', winner.id)"
       />
       <span class="text-muted">Winners</span>
     </div>
+
     <BaseButton class="text-nowrap" :disabled="!canAddWinner" @click="emit('add')">
       New winner
     </BaseButton>
@@ -32,6 +33,7 @@ const emit = defineEmits<{
 </template>
 
 <style scoped lang="scss">
+// поле виглядає як input, а всередині бейджі переможців
 .winners-field {
   display: flex;
   flex-wrap: wrap;
