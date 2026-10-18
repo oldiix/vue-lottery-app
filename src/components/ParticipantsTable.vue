@@ -6,7 +6,7 @@ import type { Participant } from '@/types/participant'
 type SortKey = 'name' | 'birthDate'
 type SortDirection = 'asc' | 'desc'
 
-// ---------- Props і події ----------
+//  Props і події
 
 const { participants } = defineProps<{
   participants: Participant[]
@@ -18,13 +18,13 @@ const emit = defineEmits<{
   delete: [participant: Participant]
 }>()
 
-// ---------- Сортування ----------
+//  Сортування
 
 // null - без сортування, в порядку додавання
 const sortKey = ref<SortKey | null>(null)
 const sortDirection = ref<SortDirection>('asc')
 
-// повторний клік по тій самій колонці міняє напрямок
+// якщо натиснути на ту саму колонку ще раз - міняється напрямок
 function toggleSort(key: SortKey): void {
   if (sortKey.value === key) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -44,7 +44,7 @@ const sortedParticipants = computed(() => {
   return [...participants].sort((a, b) => a[key].localeCompare(b[key]) * direction)
 })
 
-// ---------- Іконки сортування ----------
+//  Іконки сортування
 
 function getSortIcon(key: SortKey): string {
   const isDesc = sortKey.value === key && sortDirection.value === 'desc'
@@ -58,37 +58,81 @@ function getSortIcon(key: SortKey): string {
 <template>
   <div class="table-responsive">
     <table class="table align-middle mb-0 participants-table">
-      <!-- Header with sort controls -->
       <thead>
-      <tr>
-        <th scope="col" class="text-muted">#</th>
-        <th scope="col">
-          <button
-            type="button"
-            class="sort-button"
-            :class="{ 'sort-button--active': sortKey === 'name' }"
-            @click="toggleSort('name')"
-          >
-            Name <i class="bi" :class="getSortIcon('name')"></i>
-          </button>
-        </th>
-        <th scope="col">
-          <button
-            type="button"
-            class="sort-button"
-            :class="{ 'sort-button--active': sortKey === 'birthDate' }"
-            @click="toggleSort('birthDate')"
-          >
-            Date of Birth <i class="bi" :class="getSortIcon('birthDate')"></i>
-          </button>
-        </th>
-        <th scope="col">Email</th>
-        <th scope="col">Phone number</th>
-        <th scope="col"></th>
-        <th scope="col"></th>
-      </tr>
+        <tr>
+          <th scope="col" class="text-muted">#</th>
+          <th scope="col">
+            <button
+              type="button"
+              class="sort-button"
+              :class="{ 'sort-button--active': sortKey === 'name' }"
+              @click="toggleSort('name')"
+            >
+              Name <i class="bi" :class="getSortIcon('name')"></i>
+            </button>
+          </th>
+          <th scope="col">
+            <button
+              type="button"
+              class="sort-button"
+              :class="{ 'sort-button--active': sortKey === 'birthDate' }"
+              @click="toggleSort('birthDate')"
+            >
+              Date of Birth <i class="bi" :class="getSortIcon('birthDate')"></i>
+            </button>
+          </th>
+          <th scope="col">Email</th>
+          <th scope="col">Phone number</th>
+          <th scope="col"></th>
+          <th scope="col"></th>
+        </tr>
       </thead>
 
-      <!-- Participants rows -->
       <tbody>
-      <tr v-for="(participant,
+        <tr v-for="(participant, index) in sortedParticipants" :key="participant.id">
+          <td class="text-muted">{{ index + 1 }}</td>
+          <td>{{ participant.name }}</td>
+          <td>{{ participant.birthDate }}</td>
+          <td>{{ participant.email }}</td>
+          <td>{{ participant.phone }}</td>
+          <td>
+            <BaseButton size="sm" variant="outline-primary" @click="emit('edit', participant)">
+              Edit data
+            </BaseButton>
+          </td>
+          <td>
+            <BaseButton size="sm" variant="outline-danger" @click="emit('delete', participant)">
+              Delete participant
+            </BaseButton>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<style scoped lang="scss">
+.participants-table {
+  th,
+  td {
+    white-space: nowrap;
+  }
+}
+
+.sort-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: inherit;
+  color: inherit;
+
+  .bi {
+    opacity: 0.4;
+  }
+
+  &--active .bi {
+    opacity: 1;
+    color: var(--bs-primary);
+  }
+}
+</style>
