@@ -1,182 +1,91 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '@/components/BaseButton.vue'
-import BaseModal from '@/components/BaseModal.vue'
+import BasePagination from '@/components/BasePagination.vue'
 import ParticipantsTable from '@/components/ParticipantsTable.vue'
-import RegisterForm from '@/components/RegisterForm.vue'
 import SearchBar from '@/components/SearchBar.vue'
-import WinnersBlock from '@/components/WinnersBlock.vue'
-import type { Participant, ParticipantForm } from '@/types/participant'
+import { useUsersStore } from '@/stores/users'
+import type { User } from '@/types/user'
 
-const STORAGE_KEY = 'lottery-participants'
-const MAX_WINNERS = 3
+const PAGE_SIZE = 10
 
-//  Учасники + localStorage
+const route = useRoute()
+const router = useRouter()
+const usersStore = useUsersStore()
 
-function loadParticipants(): Participant[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    return saved ? (JSON.parse(saved) as Participant[]) : []
-  } catch {
-    return []
-  }
-}
-
-const participants = ref<Participant[]>(loadParticipants())
-
-watch(
-  participants,
-  (value) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
-  },
-  { deep: true },
-)
-
-const takenEmails = computed(() =>
-  participants.value.map((participant) => participant.email.toLowerCase()),
-)
-
-function addParticipant(data: ParticipantForm): void {
-  participants.value.push({ id: Date.now(), ...data })
-}
-
-//  Переможці
-const winnerIds = ref<number[]>([])
-
-const winners = computed(() =>
-  winnerIds.value
-    .map((id) => participants.value.find((participant) => participant.id === id))
-    .filter((participant): participant is Participant => participant !== undefined),
-)
-
-const candidates = computed(() =>
-  participants.value.filter((participant) => !winnerIds.value.includes(participant.id)),
-)
-
-const canAddWinner = computed(
-  () => winnerIds.value.length < MAX_WINNERS && candidates.value.length > 0,
-)
-
-function addWinner(): void {
-  if (!canAddWinner.value) {
-    return
-  }
-  const index = Math.floor(Math.random() * candidates.value.length)
-  const winner = candidates.value[index]
-  if (winner) {
-    winnerIds.value.push(winner.id)
-  }
-}
-
-function removeWinner(id: number): void {
-  winnerIds.value = winnerIds.value.filter((winnerId) => winnerId !== id)
-}
-
-//  Пошук
-
-const nameFilter = ref('')
-
-// спочатку фільтрую тут, а сортування вже в таблиці
-const filteredParticipants = computed(() => {
-  const query = nameFilter.value.toLowerCase()
-  return participants.value.filter((participant) => participant.name.toLowerCase().includes(query))
+const currentPage = computed(() => {
+  const page = Number(route.query.page)
+  return Number.isInteger(page) && page > 0 ? page : 1
 })
 
-//  Редагування
+const searchQuery = computed(() => (typeof route.query.q === 'string' ? route.query.q : ''))
 
-const editingParticipant = ref<Participant | null>(null)
+const totalPages = computed(() => Math.max(1, Math.ceil(usersStore.total / PAGE_SIZE)))
 
-// свій email при редагуванні не рахується як дублікат
-const editTakenEmails = computed(() =>
-  participants.value
-    .filter((participant) => participant.id !== editingParticipant.value?.id)
-    .map((participant) => participant.email.toLowerCase()),
-)
-function updateParticipant(data: ParticipantForm): void {
-  const participant = participants.value.find((item) => item.id === editingParticipant.value?.id)
-  if (participant) {
-    Object.assign(participant, data)
-  }
-  editingParticipant.value = null
+async function loadUsers(): Promise<void> {
+  await usersStore.fetchUsers({
+    limit: PAGE_SIZE,
+    skip: (currentPage.value - 1) * PAGE_SIZE,
+    q: searchQuery.value,
+  })
 }
 
-//  Видалення
+watch([currentPage, searchQuery], loadUsers, { immediate: true })
 
-const deletingParticipant = ref<Participant | null>(null)
+function changePage(page: number): void {
+  router.push({ query: { ...route.query, page: page > 1 ? String(page) : undefined } })
+}
 
-function confirmDelete(): void {
-  const target = deletingParticipant.value
-  if (!target) {
-    return
-  }
-  participants.value = participants.value.filter((participant) => participant.id !== target.id)
-  removeWinner(target.id)
-  deletingParticipant.value = null
+function search(value: string): void {
+  router.push({ query: { q: value || undefined } })
+}
+
+function editUser(user: User): void {
+  router.push({ name: 'user-edit', params: { id: user.id } })
 }
 </script>
 
 <template>
-  <div>
-    <div class="card mb-3">
-      <div class="card-body">
-        <WinnersBlock
-          :winners="winners"
-          :can-add-winner="canAddWinner"
-          @add="addWinner"
-          @remove="removeWinner"
-        />
+  <div class="card">
+    <div class="card-body p-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <h1 class="h5 fw-bold text-uppercase mb-0">Users</h1>
+        <span class="text-muted small">Total: {{ usersStore.total }}</span>
       </div>
-    </div>
 
-    <div class="card mb-3">
-      <div class="card-body p-4">
-        <RegisterForm :taken-emails="takenEmails" @save="addParticipant">
-          <template #header>
-            <h2 class="h6 fw-bold text-uppercase mb-1">Register form</h2>
-            <p class="text-muted mb-4">Please fill in all the fields.</p>
-          </template>
-        </RegisterForm>
+      <SearchBar class="mb-3" :initial-value="searchQuery" @filter-by-name="search" />
+
+      <div v-if="usersStore.isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status" aria-label="Loading"></div>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="card-body p-4">
-        <SearchBar class="mb-3" @filter-by-name="nameFilter = $event" />
-        <ParticipantsTable
-          :participants="filteredParticipants"
-          @edit="editingParticipant = $event"
-          @delete="deletingParticipant = $event"
-        />
+      <div
+        v-else-if="usersStore.error"
+        class="alert alert-danger d-flex justify-content-between align-items-center mb-0"
+        role="alert"
+      >
+        <span>{{ usersStore.error }}</span>
+        <BaseButton size="sm" variant="outline-danger" @click="loadUsers">Retry</BaseButton>
       </div>
-    </div>
 
-    <BaseModal
-      v-if="editingParticipant"
-      title="Edit participant"
-      @close="editingParticipant = null"
-    >
-      <RegisterForm
-        :initial-data="editingParticipant"
-        :taken-emails="editTakenEmails"
-        submit-text="Update data"
-        @save="updateParticipant"
-      />
-    </BaseModal>
-
-    <BaseModal
-      v-if="deletingParticipant"
-      title="Delete participant"
-      @close="deletingParticipant = null"
-    >
-      <p class="mb-0">
-        Are you sure you want to delete participant "{{ deletingParticipant.name }}", "{{
-          deletingParticipant.email
-        }}"?
+      <p v-else-if="usersStore.users.length === 0" class="text-center text-muted py-5 mb-0">
+        No users found
       </p>
-      <template #footer>
-        <BaseButton variant="danger" @click="confirmDelete">Yes</BaseButton>
-        <BaseButton variant="secondary" @click="deletingParticipant = null">No</BaseButton>
+
+      <template v-else>
+        <ParticipantsTable
+          :participants="usersStore.users"
+          :start-index="(currentPage - 1) * PAGE_SIZE"
+          @edit="editUser"
+        />
+        <BasePagination
+          class="mt-4"
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @change="changePage"
+        />
       </template>
-    </BaseModal>
+    </div>
   </div>
 </template>
