@@ -4,6 +4,8 @@ import ParticipantsTable from '@/components/ParticipantsTable.vue'
 import RegisterForm from '@/components/RegisterForm.vue'
 import type { Participant, ParticipantForm } from '@/types/participant'
 import WinnersBlock from '@/components/WinnersBlock.vue'
+import BaseButton from '@/components/BaseButton.vue'
+import BaseModal from '@/components/BaseModal.vue'
 
 const STORAGE_KEY = 'lottery-participants'
 
@@ -65,6 +67,33 @@ function addWinner(): void {
 function removeWinner(id: number): void {
   winnerIds.value = winnerIds.value.filter((winnerId) => winnerId !== id)
 }
+
+const editingParticipant = ref<Participant | null>(null)
+const deletingParticipant = ref<Participant | null>(null)
+
+const editTakenEmails = computed(() =>
+  participants.value
+    .filter((participant) => participant.id !== editingParticipant.value?.id)
+    .map((participant) => participant.email.toLowerCase()),
+)
+
+function updateParticipant(data: ParticipantForm): void {
+  const participant = participants.value.find((item) => item.id === editingParticipant.value?.id)
+  if (participant) {
+    Object.assign(participant, data)
+  }
+  editingParticipant.value = null
+}
+
+function confirmDelete(): void {
+  const target = deletingParticipant.value
+  if (!target) {
+    return
+  }
+  participants.value = participants.value.filter((participant) => participant.id !== target.id)
+  removeWinner(target.id)
+  deletingParticipant.value = null
+}
 </script>
 
 <template>
@@ -93,8 +122,41 @@ function removeWinner(id: number): void {
 
     <div class="card">
       <div class="card-body p-4">
-        <ParticipantsTable :participants="participants" />
+        <ParticipantsTable
+          :participants="participants"
+          @edit="editingParticipant = $event"
+          @delete="deletingParticipant = $event"
+        />
       </div>
     </div>
+
+    <BaseModal
+      v-if="editingParticipant"
+      title="Редагування учасника"
+      @close="editingParticipant = null"
+    >
+      <RegisterForm
+        :initial-data="editingParticipant"
+        :taken-emails="editTakenEmails"
+        submit-text="Оновити дані"
+        @save="updateParticipant"
+      />
+    </BaseModal>
+
+    <BaseModal
+      v-if="deletingParticipant"
+      title="Видалення учасника"
+      @close="deletingParticipant = null"
+    >
+      <p class="mb-0">
+        Ви дійсно бажаєте видалити учасника "{{ deletingParticipant.name }}", "{{
+          deletingParticipant.email
+        }}"?
+      </p>
+      <template #footer>
+        <BaseButton variant="danger" @click="confirmDelete">Так</BaseButton>
+        <BaseButton variant="secondary" @click="deletingParticipant = null">Ні</BaseButton>
+      </template>
+    </BaseModal>
   </main>
 </template>
