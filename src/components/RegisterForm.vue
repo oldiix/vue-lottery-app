@@ -22,11 +22,17 @@ const emit = defineEmits<{
 const uid = useId()
 const today = getToday()
 
-function createEmptyForm(): ParticipantForm {
-  return { name: '', birthDate: '', email: '', phone: '' }
+function createForm(data?: ParticipantForm): ParticipantForm {
+  return {
+    name: data?.name ?? '',
+    birthDate: data?.birthDate ?? '',
+    email: data?.email ?? '',
+    phone: data?.phone ?? '',
+  }
 }
 
-const form = ref<ParticipantForm>(initialData ? { ...initialData } : createEmptyForm())
+const form = ref<ParticipantForm>(createForm(initialData))
+
 const touched = ref<Partial<Record<Field, boolean>>>({})
 
 const errors = computed<FormErrors>(() => {
@@ -61,7 +67,7 @@ function onSubmit(): void {
   }
 
   emit('save', { ...form.value })
-  form.value = createEmptyForm()
+  form.value = createForm()
   touched.value = {}
 }
 </script>
