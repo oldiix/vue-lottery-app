@@ -1,11 +1,17 @@
 <script setup lang="ts"></script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <main class="app">
+    <div class="card mb-3">
+      <div class="card-body">
+        <button class="btn btn-primary">New winner <i class="bi bi-sort-alpha-down"></i></button>
+      </div>
+    </div>
+    <div class="card mb-3">
+      <div class="card-body">Register form</div>
+    </div>
+    <div class="card">
+      <div class="card-body">Participants table</div>
+    </div>
+  </main>
 </template>
-
-<style scoped></style>
