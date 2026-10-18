@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import ParticipantsTable from '@/components/ParticipantsTable.vue'
-import RegisterForm from '@/components/RegisterForm.vue'
-import type { Participant, ParticipantForm } from '@/types/participant'
-import WinnersBlock from '@/components/WinnersBlock.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseModal from '@/components/BaseModal.vue'
+import ParticipantsTable from '@/components/ParticipantsTable.vue'
+import RegisterForm from '@/components/RegisterForm.vue'
+import SearchBar from '@/components/SearchBar.vue'
+import WinnersBlock from '@/components/WinnersBlock.vue'
+import type { Participant, ParticipantForm } from '@/types/participant'
 
 const STORAGE_KEY = 'lottery-participants'
+const MAX_WINNERS = 3
+
+//  Учасники + localStorage
 
 function loadParticipants(): Participant[] {
   try {
@@ -36,7 +40,7 @@ function addParticipant(data: ParticipantForm): void {
   participants.value.push({ id: Date.now(), ...data })
 }
 
-const MAX_WINNERS = 3
+//  Переможці
 const winnerIds = ref<number[]>([])
 
 const winners = computed(() =>
@@ -68,15 +72,26 @@ function removeWinner(id: number): void {
   winnerIds.value = winnerIds.value.filter((winnerId) => winnerId !== id)
 }
 
-const editingParticipant = ref<Participant | null>(null)
-const deletingParticipant = ref<Participant | null>(null)
+//  Пошук
 
+const nameFilter = ref('')
+
+// спочатку фільтрую тут, а сортування вже в таблиці
+const filteredParticipants = computed(() => {
+  const query = nameFilter.value.toLowerCase()
+  return participants.value.filter((participant) => participant.name.toLowerCase().includes(query))
+})
+
+//  Редагування
+
+const editingParticipant = ref<Participant | null>(null)
+
+// свій email при редагуванні не рахується як дублікат
 const editTakenEmails = computed(() =>
   participants.value
     .filter((participant) => participant.id !== editingParticipant.value?.id)
     .map((participant) => participant.email.toLowerCase()),
 )
-
 function updateParticipant(data: ParticipantForm): void {
   const participant = participants.value.find((item) => item.id === editingParticipant.value?.id)
   if (participant) {
@@ -85,30 +100,37 @@ function updateParticipant(data: ParticipantForm): void {
   editingParticipant.value = null
 }
 
+//  Видалення
+
+const deletingParticipant = ref<Participant | null>(null)
+
 function confirmDelete(): void {
   const target = deletingParticipant.value
   if (!target) {
     return
   }
   participants.value = participants.value.filter((participant) => participant.id !== target.id)
+  // якщо це був переможець - прибираю і звідти
   removeWinner(target.id)
   deletingParticipant.value = null
 }
 </script>
 
 <template>
-  <div class="card mb-3">
-    <div class="card-body">
-      <WinnersBlock
-        :winners="winners"
-        :can-add-winner="canAddWinner"
-        @add="addWinner"
-        @remove="removeWinner"
-      />
-    </div>
-  </div>
-
   <main class="app">
+    <!-- Winners -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <WinnersBlock
+          :winners="winners"
+          :can-add-winner="canAddWinner"
+          @add="addWinner"
+          @remove="removeWinner"
+        />
+      </div>
+    </div>
+
+    <!-- Register form -->
     <div class="card mb-3">
       <div class="card-body p-4">
         <RegisterForm :taken-emails="takenEmails" @save="addParticipant">
@@ -120,42 +142,46 @@ function confirmDelete(): void {
       </div>
     </div>
 
+    <!-- Participants table -->
     <div class="card">
       <div class="card-body p-4">
+        <SearchBar class="mb-3" @filter-by-name="nameFilter = $event" />
         <ParticipantsTable
-          :participants="participants"
+          :participants="filteredParticipants"
           @edit="editingParticipant = $event"
           @delete="deletingParticipant = $event"
         />
       </div>
     </div>
 
+    <!-- Edit modal -->
     <BaseModal
       v-if="editingParticipant"
-      title="Редагування учасника"
+      title="Edit participant"
       @close="editingParticipant = null"
     >
       <RegisterForm
         :initial-data="editingParticipant"
         :taken-emails="editTakenEmails"
-        submit-text="Оновити дані"
+        submit-text="Update data"
         @save="updateParticipant"
       />
     </BaseModal>
 
+    <!-- Delete modal -->
     <BaseModal
       v-if="deletingParticipant"
-      title="Видалення учасника"
+      title="Delete participant"
       @close="deletingParticipant = null"
     >
       <p class="mb-0">
-        Ви дійсно бажаєте видалити учасника "{{ deletingParticipant.name }}", "{{
+        Are you sure you want to delete participant "{{ deletingParticipant.name }}", "{{
           deletingParticipant.email
         }}"?
       </p>
       <template #footer>
-        <BaseButton variant="danger" @click="confirmDelete">Так</BaseButton>
-        <BaseButton variant="secondary" @click="deletingParticipant = null">Ні</BaseButton>
+        <BaseButton variant="danger" @click="confirmDelete">Yes</BaseButton>
+        <BaseButton variant="secondary" @click="deletingParticipant = null">No</BaseButton>
       </template>
     </BaseModal>
   </main>
