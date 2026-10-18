@@ -116,7 +116,7 @@ function confirmDelete(): void {
 </script>
 
 <template>
-  <main class="app">
+  <div>
     <div class="card mb-3">
       <div class="card-body">
         <WinnersBlock
@@ -178,5 +178,5 @@ function confirmDelete(): void {
         <BaseButton variant="secondary" @click="deletingParticipant = null">No</BaseButton>
       </template>
     </BaseModal>
-  </main>
+  </div>
 </template>
