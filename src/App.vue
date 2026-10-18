@@ -1,13 +1,16 @@
-<template>
-  <nav class="d-flex gap-3 p-3">
-    <RouterLink to="/">Home</RouterLink>
-    <RouterLink to="/about">About</RouterLink>
-    <RouterLink to="/users">Users</RouterLink>
-    <RouterLink to="/users/1">User 1</RouterLink>
-    <RouterLink to="/users/1/edit">Edit user 1</RouterLink>
-    <RouterLink to="/login">Login</RouterLink>
-    <RouterLink to="/something-wrong">Broken link</RouterLink>
-  </nav>
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AuthLayout from '@/layouts/AuthLayout.vue'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
-  <RouterView />
+const route = useRoute()
+
+const layout = computed(() => (route.meta.layout === 'auth' ? AuthLayout : DefaultLayout))
+</script>
+
+<template>
+  <component :is="layout">
+    <RouterView />
+  </component>
 </template>
