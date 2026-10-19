@@ -74,7 +74,6 @@ function removeWinner(id: number): void {
 
 const nameFilter = ref('')
 
-// спочатку фільтрую тут, а сортування вже в таблиці
 const filteredParticipants = computed(() => {
   const query = nameFilter.value.toLowerCase()
   return participants.value.filter((participant) => participant.name.toLowerCase().includes(query))
