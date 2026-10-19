@@ -70,7 +70,6 @@ async function logout(): Promise<void> {
       background-color: var(--bs-tertiary-bg);
     }
 
-    // активний пункт меню
     &.router-link-active {
       background-color: var(--bs-primary);
       color: #fff;

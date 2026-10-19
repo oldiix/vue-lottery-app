@@ -29,7 +29,7 @@ async function getErrorMessage(response: Response): Promise<string> {
 type AuthFailureHandler = () => void
 
 let onAuthFailure: AuthFailureHandler | null = null
-// один спільний запит на refresh, якщо кілька запитів отримали 401 одночасно
+
 let refreshPromise: Promise<boolean> | null = null
 
 export function setAuthFailureHandler(handler: AuthFailureHandler): void {
@@ -83,7 +83,6 @@ export async function http<T>(path: string, options: RequestOptions = {}): Promi
 
   let response = await sendRequest(path, init, requestHeaders, auth)
 
-  // interceptor: при 401 оновлюю accessToken і повторюю запит один раз
   if (response.status === 401 && auth) {
     const isRefreshed = await refreshOnce()
     if (isRefreshed) {

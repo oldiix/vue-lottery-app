@@ -1,7 +1,6 @@
 const ACCESS_TOKEN_KEY = 'accessToken'
 const REFRESH_TOKEN_KEY = 'refreshToken'
 
-// єдине місце, де код працює з токенами в localStorage
 export const tokenStorage = {
   getAccessToken(): string | null {
     return localStorage.getItem(ACCESS_TOKEN_KEY)
