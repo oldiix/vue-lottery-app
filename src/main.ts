@@ -15,7 +15,6 @@ app.use(router)
 
 const auth = useAuthStore()
 
-// refresh-токен теж недійсний: розлогінюю і відправляю на Login
 setAuthFailureHandler(() => {
   auth.logout()
   const { fullPath, meta } = router.currentRoute.value
@@ -24,9 +23,7 @@ setAuthFailureHandler(() => {
   }
 })
 
-// при старті перевіряю збережений токен через /auth/me (за потреби спрацює refresh)
 if (auth.isAuthenticated) {
-  // 401 обробляє interceptor, інші помилки (наприклад, немає мережі) не розлогінюють
   auth.fetchCurrentUser().catch(() => undefined)
 }
 
