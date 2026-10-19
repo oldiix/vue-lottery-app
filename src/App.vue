@@ -11,8 +11,6 @@ import type { Participant, ParticipantForm } from '@/types/participant'
 const STORAGE_KEY = 'lottery-participants'
 const MAX_WINNERS = 3
 
-//  Учасники + localStorage
-
 function loadParticipants(): Participant[] {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -86,7 +84,6 @@ const filteredParticipants = computed(() => {
 
 const editingParticipant = ref<Participant | null>(null)
 
-// свій email при редагуванні не рахується як дублікат
 const editTakenEmails = computed(() =>
   participants.value
     .filter((participant) => participant.id !== editingParticipant.value?.id)
@@ -110,7 +107,6 @@ function confirmDelete(): void {
     return
   }
   participants.value = participants.value.filter((participant) => participant.id !== target.id)
-  // якщо це був переможець - прибираю і звідти
   removeWinner(target.id)
   deletingParticipant.value = null
 }
@@ -118,7 +114,6 @@ function confirmDelete(): void {
 
 <template>
   <main class="app">
-    <!-- Winners -->
     <div class="card mb-3">
       <div class="card-body">
         <WinnersBlock
@@ -130,7 +125,6 @@ function confirmDelete(): void {
       </div>
     </div>
 
-    <!-- Register form -->
     <div class="card mb-3">
       <div class="card-body p-4">
         <RegisterForm :taken-emails="takenEmails" @save="addParticipant">
@@ -142,7 +136,6 @@ function confirmDelete(): void {
       </div>
     </div>
 
-    <!-- Participants table -->
     <div class="card">
       <div class="card-body p-4">
         <SearchBar class="mb-3" @filter-by-name="nameFilter = $event" />
@@ -154,7 +147,6 @@ function confirmDelete(): void {
       </div>
     </div>
 
-    <!-- Edit modal -->
     <BaseModal
       v-if="editingParticipant"
       title="Edit participant"
@@ -168,7 +160,6 @@ function confirmDelete(): void {
       />
     </BaseModal>
 
-    <!-- Delete modal -->
     <BaseModal
       v-if="deletingParticipant"
       title="Delete participant"

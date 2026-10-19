@@ -6,25 +6,18 @@ import type { Participant } from '@/types/participant'
 type SortKey = 'name' | 'birthDate'
 type SortDirection = 'asc' | 'desc'
 
-//  Props і події
-
 const { participants } = defineProps<{
   participants: Participant[]
 }>()
 
-// таблиця сама нічого не змінює, тільки повідомляє App
 const emit = defineEmits<{
   edit: [participant: Participant]
   delete: [participant: Participant]
 }>()
 
-//  Сортування
-
-// null - без сортування, в порядку додавання
 const sortKey = ref<SortKey | null>(null)
 const sortDirection = ref<SortDirection>('asc')
 
-// якщо натиснути на ту саму колонку ще раз - міняється напрямок
 function toggleSort(key: SortKey): void {
   if (sortKey.value === key) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -34,7 +27,6 @@ function toggleSort(key: SortKey): void {
   }
 }
 
-// сортую копію, щоб не чіпати вихідний список
 const sortedParticipants = computed(() => {
   const key = sortKey.value
   if (!key) {
@@ -43,8 +35,6 @@ const sortedParticipants = computed(() => {
   const direction = sortDirection.value === 'asc' ? 1 : -1
   return [...participants].sort((a, b) => a[key].localeCompare(b[key]) * direction)
 })
-
-//  Іконки сортування
 
 function getSortIcon(key: SortKey): string {
   const isDesc = sortKey.value === key && sortDirection.value === 'desc'
