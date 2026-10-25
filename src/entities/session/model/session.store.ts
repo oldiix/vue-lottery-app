@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { tokenStorage } from '@/shared/api/token-storage.ts'
-import { ServiceProvider } from '@/shared/api/service-provider.ts'
-import type { AuthUser, LoginCredentials } from '@/entities/session/model/types.ts'
-import type { User } from '@/entities/user/model/types.ts'
+import { ServiceProvider, tokenStorage } from '@/shared/api'
+import type { AuthService } from '../api/auth.service'
+import type { AuthUser, LoginCredentials } from './types'
+import type { User } from '@/entities/user/model/types'
 
 const USER_KEY = 'authUser'
 
@@ -22,6 +22,8 @@ function toAuthUser(user: User): AuthUser {
 }
 
 export const useAuthStore = defineStore('auth', () => {
+  const authService = () => ServiceProvider.get<AuthService>('auth')
+
   const accessToken = ref<string | null>(tokenStorage.getAccessToken())
   const user = ref<AuthUser | null>(loadUser())
 
@@ -37,12 +39,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchCurrentUser(): Promise<void> {
-    const currentUser = await ServiceProvider.auth.me()
+    const currentUser = await authService().me()
     setUser(toAuthUser(currentUser))
   }
 
   async function login(credentials: LoginCredentials): Promise<void> {
-    const response = await ServiceProvider.auth.login(credentials)
+    const response = await authService().login(credentials)
     tokenStorage.setTokens(response.accessToken, response.refreshToken)
     accessToken.value = response.accessToken
 

@@ -1,6 +1,6 @@
-import { http } from '@/shared/api/http-client.ts'
-import type { AuthTokens, LoginCredentials, LoginResponse } from '@/entities/session/model/types.ts'
-import type { User } from '@/entities/user/model/types.ts'
+import { http } from '@/shared/api'
+import type { AuthTokens, LoginCredentials, LoginResponse } from '../model/types'
+import type { User } from '@/entities/user/model/types'
 
 const TOKEN_LIFETIME_MINUTES = 30
 

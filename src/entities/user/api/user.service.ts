@@ -1,4 +1,4 @@
-import { http } from '@/shared/api/http-client.ts'
+import { http } from '@/shared/api'
 import type {
   Creatable,
   Deletable,
@@ -6,13 +6,8 @@ import type {
   ListParams,
   PaginatedResult,
   Readable,
-} from '@/shared/api/interfaces.ts'
-import type {
-  CreateUserDto,
-  UpdateUserDto,
-  User,
-  UsersResponse,
-} from '@/entities/user/model/types.ts'
+} from '@/shared/api'
+import type { CreateUserDto, UpdateUserDto, User, UsersResponse } from '../model/types'
 
 export class UserService
   implements

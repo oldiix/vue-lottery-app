@@ -1,7 +1,12 @@
-import { tokenStorage } from '@/shared/api/token-storage.ts'
-import { ServiceProvider } from '@/shared/api/service-provider.ts'
+import { tokenStorage } from './token-storage'
 
 const BASE_URL = import.meta.env.VITE_API_URL
+const TOKEN_LIFETIME_MINUTES = 30
+
+interface RefreshResponse {
+  accessToken: string
+  refreshToken: string
+}
 
 export interface RequestOptions extends RequestInit {
   auth?: boolean
@@ -43,7 +48,15 @@ async function refreshTokens(): Promise<boolean> {
   }
 
   try {
-    const data = await ServiceProvider.auth.refresh(refreshToken)
+    const response = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken, expiresInMins: TOKEN_LIFETIME_MINUTES }),
+    })
+    if (!response.ok) {
+      return false
+    }
+    const data = (await response.json()) as RefreshResponse
     tokenStorage.setTokens(data.accessToken, data.refreshToken)
     return true
   } catch {

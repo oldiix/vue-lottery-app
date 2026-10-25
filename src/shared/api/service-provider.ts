@@ -1,17 +1,21 @@
-import { AuthService } from '@/entities/session/api/auth.service.ts'
-import { UserService } from '@/entities/user/api/user.service.ts'
+type Factory<T> = () => T
 
 export class ServiceProvider {
-  private static userService?: UserService
-  private static authService?: AuthService
+  private static factories = new Map<string, Factory<unknown>>()
+  private static instances = new Map<string, unknown>()
 
-  static get users(): UserService {
-    this.userService ??= new UserService()
-    return this.userService
+  static register<T>(key: string, factory: Factory<T>): void {
+    this.factories.set(key, factory)
   }
 
-  static get auth(): AuthService {
-    this.authService ??= new AuthService()
-    return this.authService
+  static get<T>(key: string): T {
+    if (!this.instances.has(key)) {
+      const factory = this.factories.get(key)
+      if (!factory) {
+        throw new Error(`Service "${key}" is not registered`)
+      }
+      this.instances.set(key, factory())
+    }
+    return this.instances.get(key) as T
   }
 }

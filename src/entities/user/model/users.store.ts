@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { ServiceProvider } from '@/shared/api/service-provider.ts'
-import type { ListParams } from '@/shared/api/interfaces.ts'
-import type { CreateUserDto, UpdateUserDto, User } from '@/entities/user/model/types.ts'
+import { ServiceProvider } from '@/shared/api'
+import type { ListParams } from '@/shared/api'
+import type { UserService } from '../api/user.service'
+import type { CreateUserDto, UpdateUserDto, User } from './types'
 
 const MAX_WINNERS = 3
 
@@ -11,6 +12,8 @@ function replaceInList(list: User[], updated: User): User[] {
 }
 
 export const useUsersStore = defineStore('users', () => {
+  const service = () => ServiceProvider.get<UserService>('users')
+
   const users = ref<User[]>([])
   const total = ref(0)
   const isLoading = ref(false)
@@ -63,7 +66,7 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      const result = await ServiceProvider.users.getAll(params)
+      const result = await service().getAll(params)
       if (requestId !== lastRequestId) {
         return
       }
@@ -94,13 +97,13 @@ export const useUsersStore = defineStore('users', () => {
       return localUser
     }
     if (deletedIds.value.includes(id)) {
-      throw new Error('Types not found')
+      throw new Error('User not found')
     }
-    return ServiceProvider.users.getById(id)
+    return service().getById(id)
   }
 
   async function addUser(data: CreateUserDto): Promise<void> {
-    const created = await ServiceProvider.users.create(data)
+    const created = await service().create(data)
     const user: User = { ...created, id: Date.now() }
 
     createdUsers.value.unshift(user)
@@ -116,7 +119,7 @@ export const useUsersStore = defineStore('users', () => {
       updated = { ...localUser, ...data }
       createdUsers.value = replaceInList(createdUsers.value, updated)
     } else {
-      updated = await ServiceProvider.users.update(id, data)
+      updated = await service().update(id, data)
       updatedUsers.value[id] = updated
     }
 
@@ -129,7 +132,7 @@ export const useUsersStore = defineStore('users', () => {
     if (findCreatedUser(id)) {
       createdUsers.value = createdUsers.value.filter((user) => user.id !== id)
     } else {
-      await ServiceProvider.users.delete(id)
+      await service().delete(id)
       deletedIds.value.push(id)
     }
 
