@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
-import { useAuthStore } from '@/entities/session/model/session.store.ts'
+import { setupGuards } from './guards'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -8,8 +8,6 @@ declare module 'vue-router' {
     layout?: 'default' | 'auth'
   }
 }
-
-const APP_TITLE = 'Vue Lottery'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -70,21 +68,6 @@ const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes,
 })
-
-router.beforeEach((to) => {
-  const auth = useAuthStore()
-
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    return { name: 'login', query: { redirect: to.fullPath } }
-  }
-
-  if (to.name === 'login' && auth.isAuthenticated) {
-    return { name: 'users' }
-  }
-})
-
-router.afterEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} | ${APP_TITLE}` : APP_TITLE
-})
+setupGuards(router)
 
 export default router

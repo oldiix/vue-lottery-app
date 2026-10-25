@@ -1,5 +1,3 @@
-import type { User } from '@/entities/user/model/types.ts'
-
 export interface LoginCredentials {
   username: string
   password: string
@@ -10,9 +8,14 @@ export interface AuthTokens {
   refreshToken: string
 }
 
-export type AuthUser = Pick<
-  User,
-  'id' | 'username' | 'email' | 'firstName' | 'lastName' | 'gender' | 'image'
->
+export interface AuthUser {
+  id: number
+  username: string
+  email: string
+  firstName: string
+  lastName: string
+  gender: 'male' | 'female'
+  image?: string
+}
 
 export type LoginResponse = AuthTokens & AuthUser

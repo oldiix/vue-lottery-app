@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import BaseButton from '@/shared/ui/BaseButton.vue'
-import WinnerItem from '@/features/pick-winner/ui/WinnerItem.vue'
-import type { User } from '@/entities/user/model/types.ts'
+import { storeToRefs } from 'pinia'
+import { BaseButton } from '@/shared/ui'
+import { useWinnersStore } from '../model/winners.store'
+import WinnerItem from './WinnerItem.vue'
 
-const { winners, canAddWinner } = defineProps<{
-  winners: User[]
-  canAddWinner: boolean
-}>()
-
-const emit = defineEmits<{
-  add: []
-  remove: [id: number]
-}>()
+const winnersStore = useWinnersStore()
+const { winners, canAddWinner } = storeToRefs(winnersStore)
+const { addRandomWinner, removeWinner } = winnersStore
 </script>
 
 <template>
@@ -21,19 +16,18 @@ const emit = defineEmits<{
         v-for="winner in winners"
         :key="winner.id"
         :name="`${winner.firstName} ${winner.lastName}`"
-        @remove="emit('remove', winner.id)"
+        @remove="removeWinner(winner.id)"
       />
       <span class="text-muted">Winners</span>
     </div>
 
-    <BaseButton class="text-nowrap" :disabled="!canAddWinner" @click="emit('add')">
+    <BaseButton class="text-nowrap" :disabled="!canAddWinner" @click="addRandomWinner">
       New winner
     </BaseButton>
   </div>
 </template>
 
 <style scoped lang="scss">
-// поле виглядає як input, а всередині бейджі переможців
 .winners-field {
   display: flex;
   flex-wrap: wrap;

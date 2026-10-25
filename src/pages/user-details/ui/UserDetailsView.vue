@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useUsersStore } from '@/entities/user/model/users.store.ts'
-import type { User } from '@/entities/user/model/types.ts'
+import { useUsersStore, type User } from '@/entities/user'
 
 interface DetailRow {
   label: string
@@ -14,7 +13,7 @@ const { id } = defineProps<{
 }>()
 
 const route = useRoute()
-const usersStore = useUsersStore()
+const { fetchUser } = useUsersStore()
 
 const user = ref<User | null>(null)
 const isLoading = ref(false)
@@ -24,7 +23,7 @@ async function loadUser(): Promise<void> {
   isLoading.value = true
   error.value = null
   try {
-    user.value = await usersStore.getUser(Number(id))
+    user.value = await fetchUser(Number(id))
   } catch (e) {
     user.value = null
     error.value = e instanceof Error ? e.message : 'Failed to load user'

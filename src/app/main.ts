@@ -5,31 +5,26 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './providers/router'
-import { setAuthFailureHandler } from '@/shared/api'
-import { useAuthStore } from '@/entities/session/model/session.store.ts'
 import { registerServices } from './providers/services'
+import { setAuthFailureHandler } from '@/shared/api'
+import { useSessionStore } from '@/entities/session'
 
 const app = createApp(App)
 
 registerServices()
 
 app.use(createPinia())
-
-app.use(createPinia())
 app.use(router)
 
-const auth = useAuthStore()
+const session = useSessionStore()
 
 setAuthFailureHandler(() => {
-  auth.logout()
-  const { fullPath, meta } = router.currentRoute.value
-  if (meta.requiresAuth) {
-    router.push({ name: 'login', query: { redirect: fullPath } })
-  }
+  session.clearSession()
+  router.push({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })
 })
 
-if (auth.isAuthenticated) {
-  auth.fetchCurrentUser().catch(() => undefined)
+if (session.isAuthenticated) {
+  session.fetchCurrentUser().catch(() => undefined)
 }
 
 router.isReady().then(() => {

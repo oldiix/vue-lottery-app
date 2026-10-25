@@ -2,9 +2,9 @@
 import { ref, useId } from 'vue'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
-import BaseButton from '@/shared/ui/BaseButton.vue'
-import BaseInput from '@/shared/ui/BaseInput.vue'
-import type { CreateUserDto, Gender } from '@/entities/user/model/types.ts'
+import { BaseButton } from '@/shared/ui'
+import { BaseInput } from '@/shared/ui'
+import type { CreateUserDto, Gender } from '@/entities/user'
 
 interface UserFormValues {
   firstName: string

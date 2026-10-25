@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import BaseButton from '@/shared/ui/BaseButton.vue'
-import type { User } from '@/entities/user/model/types.ts'
+import { BaseButton } from '@/shared/ui'
+import type { User } from '@/entities/user'
 
 type SortKey = 'name' | 'age'
 type SortDirection = 'asc' | 'desc'

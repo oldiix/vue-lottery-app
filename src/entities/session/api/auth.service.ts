@@ -1,6 +1,5 @@
 import { http } from '@/shared/api'
-import type { AuthTokens, LoginCredentials, LoginResponse } from '../model/types'
-import type { User } from '@/entities/user/model/types'
+import type { AuthTokens, AuthUser, LoginCredentials, LoginResponse } from '../model/types'
 
 const TOKEN_LIFETIME_MINUTES = 30
 
@@ -12,8 +11,8 @@ export class AuthService {
     })
   }
 
-  me(): Promise<User> {
-    return http<User>('/auth/me', { auth: true })
+  me(): Promise<AuthUser> {
+    return http<AuthUser>('/auth/me', { auth: true })
   }
 
   refresh(refreshToken: string): Promise<AuthTokens> {

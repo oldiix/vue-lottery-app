@@ -5,8 +5,6 @@ import type { ListParams } from '@/shared/api'
 import type { UserService } from '../api/user.service'
 import type { CreateUserDto, UpdateUserDto, User } from './types'
 
-const MAX_WINNERS = 3
-
 function replaceInList(list: User[], updated: User): User[] {
   return list.map((user) => (user.id === updated.id ? updated : user))
 }
@@ -18,6 +16,8 @@ export const useUsersStore = defineStore('users', () => {
   const total = ref(0)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+
+  const hasUsers = computed(() => users.value.length > 0)
 
   let lastRequestId = 0
 
@@ -33,31 +33,6 @@ export const useUsersStore = defineStore('users', () => {
     return items
       .filter((user) => !deletedIds.value.includes(user.id))
       .map((user) => updatedUsers.value[user.id] ?? user)
-  }
-
-  const winners = ref<User[]>([])
-
-  const candidates = computed(() =>
-    users.value.filter((user) => !winners.value.some((winner) => winner.id === user.id)),
-  )
-
-  const canAddWinner = computed(
-    () => winners.value.length < MAX_WINNERS && candidates.value.length > 0,
-  )
-
-  function addRandomWinner(): void {
-    if (!canAddWinner.value) {
-      return
-    }
-    const index = Math.floor(Math.random() * candidates.value.length)
-    const winner = candidates.value[index]
-    if (winner) {
-      winners.value.push(winner)
-    }
-  }
-
-  function removeWinner(id: number): void {
-    winners.value = winners.value.filter((winner) => winner.id !== id)
   }
 
   async function fetchUsers(params: ListParams): Promise<void> {
@@ -91,7 +66,7 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  async function getUser(id: number): Promise<User> {
+  async function fetchUser(id: number): Promise<User> {
     const localUser = findCreatedUser(id) ?? updatedUsers.value[id]
     if (localUser) {
       return localUser
@@ -102,13 +77,14 @@ export const useUsersStore = defineStore('users', () => {
     return service().getById(id)
   }
 
-  async function addUser(data: CreateUserDto): Promise<void> {
+  async function createUser(data: CreateUserDto): Promise<User> {
     const created = await service().create(data)
     const user: User = { ...created, id: Date.now() }
 
     createdUsers.value.unshift(user)
     users.value.unshift(user)
     total.value += 1
+    return user
   }
 
   async function updateUser(id: number, data: UpdateUserDto): Promise<User> {
@@ -124,7 +100,6 @@ export const useUsersStore = defineStore('users', () => {
     }
 
     users.value = replaceInList(users.value, updated)
-    winners.value = replaceInList(winners.value, updated)
     return updated
   }
 
@@ -138,7 +113,6 @@ export const useUsersStore = defineStore('users', () => {
 
     users.value = users.value.filter((user) => user.id !== id)
     total.value = Math.max(0, total.value - 1)
-    removeWinner(id)
   }
 
   return {
@@ -146,14 +120,11 @@ export const useUsersStore = defineStore('users', () => {
     total,
     isLoading,
     error,
-    winners,
-    canAddWinner,
+    hasUsers,
     fetchUsers,
-    getUser,
-    addUser,
+    fetchUser,
+    createUser,
     updateUser,
     removeUser,
-    addRandomWinner,
-    removeWinner,
   }
 })

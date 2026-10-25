@@ -1,21 +1,20 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import BaseButton from '@/shared/ui/BaseButton.vue'
-import BaseModal from '@/shared/ui/BaseModal.vue'
-import BasePagination from '@/shared/ui/BasePagination.vue'
-import ParticipantsTable from '@/widgets/users-table/ui/ParticipantsTable.vue'
-import SearchBar from '@/shared/ui/SearchBar.vue'
-import UserForm from '@/features/user-form/ui/UserForm.vue'
-import WinnersBlock from '@/features/pick-winner/ui/WinnersBlock.vue'
-import { useUsersStore } from '@/entities/user/model/users.store.ts'
-import type { User } from '@/entities/user/model/types.ts'
+import { storeToRefs } from 'pinia'
+import { BaseButton, BaseModal, BasePagination, SearchBar } from '@/shared/ui'
+import { ParticipantsTable } from '@/widgets/users-table'
+import { UserForm } from '@/features/user-form'
+import { WinnersBlock } from '@/features/pick-winner'
+import { useUsersStore, type User } from '@/entities/user'
 
 const PAGE_SIZE = 10
 
 const route = useRoute()
 const router = useRouter()
 const usersStore = useUsersStore()
+const { users, total, isLoading, error } = storeToRefs(usersStore)
+const { fetchUsers, createUser, removeUser } = usersStore
 
 const currentPage = computed(() => {
   const page = Number(route.query.page)
@@ -24,10 +23,10 @@ const currentPage = computed(() => {
 
 const searchQuery = computed(() => (typeof route.query.q === 'string' ? route.query.q : ''))
 
-const totalPages = computed(() => Math.max(1, Math.ceil(usersStore.total / PAGE_SIZE)))
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 
 async function loadUsers(): Promise<void> {
-  await usersStore.fetchUsers({
+  await fetchUsers({
     limit: PAGE_SIZE,
     skip: (currentPage.value - 1) * PAGE_SIZE,
     q: searchQuery.value,
@@ -70,10 +69,10 @@ async function confirmDelete(): Promise<void> {
   isDeleting.value = true
   deleteError.value = ''
   try {
-    await usersStore.removeUser(deletingUser.value.id)
+    await removeUser(deletingUser.value.id)
     deletingUser.value = null
-  } catch (error) {
-    deleteError.value = error instanceof Error ? error.message : 'Failed to delete user'
+  } catch (e) {
+    deleteError.value = e instanceof Error ? e.message : 'Failed to delete user'
   } finally {
     isDeleting.value = false
   }
@@ -83,12 +82,7 @@ async function confirmDelete(): Promise<void> {
 <template>
   <div class="card mb-3">
     <div class="card-body">
-      <WinnersBlock
-        :winners="usersStore.winners"
-        :can-add-winner="usersStore.canAddWinner"
-        @add="usersStore.addRandomWinner"
-        @remove="usersStore.removeWinner"
-      />
+      <WinnersBlock />
     </div>
   </div>
 
@@ -96,7 +90,7 @@ async function confirmDelete(): Promise<void> {
     <div class="card-body p-4">
       <h2 class="h6 fw-bold text-uppercase mb-1">Register form</h2>
       <p class="text-muted mb-4">Please fill in all the fields.</p>
-      <UserForm :action="usersStore.addUser" reset-after-submit />
+      <UserForm :action="createUser" reset-after-submit />
     </div>
   </div>
 
@@ -104,31 +98,29 @@ async function confirmDelete(): Promise<void> {
     <div class="card-body p-4">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
         <h1 class="h5 fw-bold text-uppercase mb-0">Users</h1>
-        <span class="text-muted small">Total: {{ usersStore.total }}</span>
+        <span class="text-muted small">Total: {{ total }}</span>
       </div>
 
       <SearchBar class="mb-3" :initial-value="searchQuery" @filter-by-name="search" />
 
-      <div v-if="usersStore.isLoading" class="text-center py-5">
+      <div v-if="isLoading" class="text-center py-5">
         <div class="spinner-border text-primary" role="status" aria-label="Loading"></div>
       </div>
 
       <div
-        v-else-if="usersStore.error"
+        v-else-if="error"
         class="alert alert-danger d-flex justify-content-between align-items-center mb-0"
         role="alert"
       >
-        <span>{{ usersStore.error }}</span>
+        <span>{{ error }}</span>
         <BaseButton size="sm" variant="outline-danger" @click="loadUsers">Retry</BaseButton>
       </div>
 
-      <p v-else-if="usersStore.users.length === 0" class="text-center text-muted py-5 mb-0">
-        No users found
-      </p>
+      <p v-else-if="users.length === 0" class="text-center text-muted py-5 mb-0">No users found</p>
 
       <template v-else>
         <ParticipantsTable
-          :participants="usersStore.users"
+          :participants="users"
           :start-index="(currentPage - 1) * PAGE_SIZE"
           @edit="editUser"
           @delete="openDeleteModal"

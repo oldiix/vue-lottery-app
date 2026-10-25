@@ -1,25 +1,20 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/entities/session/model/session.store.ts'
+import { storeToRefs } from 'pinia'
+import { useSessionStore } from '@/entities/session'
+import { LogoutButton } from '@/features/auth'
 
 interface NavigationItem {
   label: string
   to: string
 }
 
-const auth = useAuthStore()
-const router = useRouter()
+const { isAuthenticated, user } = storeToRefs(useSessionStore())
 
 const items: NavigationItem[] = [
   { label: 'Home', to: '/' },
   { label: 'About author', to: '/about' },
   { label: 'Users', to: '/users' },
 ]
-
-async function logout(): Promise<void> {
-  auth.logout()
-  await router.push({ name: 'login' })
-}
 </script>
 
 <template>
@@ -31,13 +26,12 @@ async function logout(): Promise<void> {
         </RouterLink>
       </li>
 
-      <!-- для авторизованого замість Login показую Logout -->
-      <template v-if="auth.isAuthenticated">
-        <li v-if="auth.user" class="app-navigation__user">
-          <i class="bi bi-person-circle"></i> {{ auth.user.firstName }}
+      <template v-if="isAuthenticated">
+        <li v-if="user" class="app-navigation__user">
+          <i class="bi bi-person-circle"></i> {{ user.firstName }}
         </li>
         <li>
-          <button type="button" class="app-navigation__link" @click="logout">Logout</button>
+          <LogoutButton class="app-navigation__link" />
         </li>
       </template>
       <li v-else>

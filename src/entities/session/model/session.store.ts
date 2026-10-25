@@ -2,8 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { ServiceProvider, tokenStorage } from '@/shared/api'
 import type { AuthService } from '../api/auth.service'
-import type { AuthUser, LoginCredentials } from './types'
-import type { User } from '@/entities/user/model/types'
+import type { AuthTokens, AuthUser, LoginCredentials } from './types'
 
 const USER_KEY = 'authUser'
 
@@ -16,51 +15,63 @@ function loadUser(): AuthUser | null {
   }
 }
 
-function toAuthUser(user: User): AuthUser {
+function toAuthUser(user: AuthUser): AuthUser {
   const { id, username, email, firstName, lastName, gender, image } = user
   return { id, username, email, firstName, lastName, gender, image }
 }
 
-export const useAuthStore = defineStore('auth', () => {
+export const useSessionStore = defineStore('session', () => {
   const authService = () => ServiceProvider.get<AuthService>('auth')
 
   const accessToken = ref<string | null>(tokenStorage.getAccessToken())
+  const refreshToken = ref<string | null>(tokenStorage.getRefreshToken())
   const user = ref<AuthUser | null>(loadUser())
 
-  const isAuthenticated = computed(() => Boolean(accessToken.value))
+  const isAuthenticated = computed(() => accessToken.value !== null)
 
-  function setUser(value: AuthUser | null): void {
-    user.value = value
-    if (value) {
-      localStorage.setItem(USER_KEY, JSON.stringify(value))
-    } else {
-      localStorage.removeItem(USER_KEY)
-    }
+  function setSession(tokens: AuthTokens): void {
+    accessToken.value = tokens.accessToken
+    refreshToken.value = tokens.refreshToken
+    tokenStorage.setTokens(tokens.accessToken, tokens.refreshToken)
+  }
+
+  function clearSession(): void {
+    accessToken.value = null
+    refreshToken.value = null
+    user.value = null
+    tokenStorage.clear()
+    localStorage.removeItem(USER_KEY)
+  }
+
+  function setUser(value: AuthUser): void {
+    user.value = toAuthUser(value)
+    localStorage.setItem(USER_KEY, JSON.stringify(user.value))
   }
 
   async function fetchCurrentUser(): Promise<void> {
-    const currentUser = await authService().me()
-    setUser(toAuthUser(currentUser))
+    setUser(await authService().me())
   }
 
   async function login(credentials: LoginCredentials): Promise<void> {
     const response = await authService().login(credentials)
-    tokenStorage.setTokens(response.accessToken, response.refreshToken)
-    accessToken.value = response.accessToken
+    setSession({ accessToken: response.accessToken, refreshToken: response.refreshToken })
 
     try {
       await fetchCurrentUser()
     } catch (error) {
-      logout()
+      clearSession()
       throw error
     }
   }
 
-  function logout(): void {
-    tokenStorage.clear()
-    accessToken.value = null
-    setUser(null)
+  return {
+    accessToken,
+    refreshToken,
+    user,
+    isAuthenticated,
+    setSession,
+    clearSession,
+    fetchCurrentUser,
+    login,
   }
-
-  return { accessToken, user, isAuthenticated, login, logout, fetchCurrentUser }
 })
