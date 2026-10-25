@@ -16,3 +16,9 @@ $body-color: #555;
 @import 'bootstrap/scss/card';
 
 @import 'bootstrap/scss/utilities/api';
+
+.card {
+  --bs-card-bg: var(--p-content-background);
+  --bs-card-border-color: var(--p-content-border-color);
+}
+

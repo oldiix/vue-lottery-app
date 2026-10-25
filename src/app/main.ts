@@ -1,6 +1,7 @@
 import './styles/main.scss'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import { setupUi } from './providers/ui'
+import { useThemeStore } from '@/features/theme-toggle'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -17,6 +18,7 @@ registerServices()
 app.use(createPinia())
 app.use(router)
 setupUi(app)
+useThemeStore()
 
 const session = useSessionStore()
 
