@@ -1,5 +1,6 @@
 import './styles/main.scss'
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import { setupUi } from './providers/ui'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -15,6 +16,7 @@ registerServices()
 
 app.use(createPinia())
 app.use(router)
+setupUi(app)
 
 const session = useSessionStore()
 
