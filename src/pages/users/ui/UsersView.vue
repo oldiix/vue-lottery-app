@@ -2,8 +2,16 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { BaseButton, BaseModal, BasePagination, SearchBar } from '@/shared/ui'
-import { ParticipantsTable } from '@/widgets/users-table'
+import {
+  AppButton,
+  AppConfirmDialog,
+  AppMessage,
+  AppPaginator,
+  AppSpinner,
+  SearchBar,
+  useNotify,
+} from '@/shared/ui'
+import { UsersTable } from '@/widgets/users-table'
 import { UserForm } from '@/features/user-form'
 import { WinnersBlock } from '@/features/pick-winner'
 import { useUsersStore, type User } from '@/entities/user'
@@ -12,6 +20,8 @@ const PAGE_SIZE = 10
 
 const route = useRoute()
 const router = useRouter()
+const notify = useNotify()
+
 const usersStore = useUsersStore()
 const { users, total, isLoading, error } = storeToRefs(usersStore)
 const { fetchUsers, createUser, removeUser } = usersStore
@@ -22,8 +32,6 @@ const currentPage = computed(() => {
 })
 
 const searchQuery = computed(() => (typeof route.query.q === 'string' ? route.query.q : ''))
-
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 
 async function loadUsers(): Promise<void> {
   await fetchUsers({
@@ -49,30 +57,32 @@ function editUser(user: User): void {
 
 const deletingUser = ref<User | null>(null)
 const isDeleting = ref(false)
-const deleteError = ref('')
 
-function openDeleteModal(user: User): void {
+const isDeleteDialogOpen = computed({
+  get: () => deletingUser.value !== null,
+  set: (value: boolean) => {
+    if (!value) {
+      deletingUser.value = null
+    }
+  },
+})
+
+function openDeleteDialog(user: User): void {
   deletingUser.value = user
-  deleteError.value = ''
-}
-
-function closeDeleteModal(): void {
-  if (!isDeleting.value) {
-    deletingUser.value = null
-  }
 }
 
 async function confirmDelete(): Promise<void> {
-  if (!deletingUser.value) {
+  const user = deletingUser.value
+  if (!user) {
     return
   }
   isDeleting.value = true
-  deleteError.value = ''
   try {
-    await removeUser(deletingUser.value.id)
+    await removeUser(user.id)
+    notify.success('User deleted', `${user.firstName} ${user.lastName}`)
     deletingUser.value = null
   } catch (e) {
-    deleteError.value = e instanceof Error ? e.message : 'Failed to delete user'
+    notify.error('Failed to delete user', e instanceof Error ? e.message : undefined)
   } finally {
     isDeleting.value = false
   }
@@ -90,7 +100,7 @@ async function confirmDelete(): Promise<void> {
     <div class="card-body p-4">
       <h2 class="h6 fw-bold text-uppercase mb-1">Register form</h2>
       <p class="text-muted mb-4">Please fill in all the fields.</p>
-      <UserForm :action="createUser" reset-after-submit />
+      <UserForm :action="createUser" success-message="User created" reset-after-submit />
     </div>
   </div>
 
@@ -103,51 +113,48 @@ async function confirmDelete(): Promise<void> {
 
       <SearchBar class="mb-3" :initial-value="searchQuery" @filter-by-name="search" />
 
-      <div v-if="isLoading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status" aria-label="Loading"></div>
-      </div>
+      <AppSpinner v-if="isLoading" />
 
-      <div
-        v-else-if="error"
-        class="alert alert-danger d-flex justify-content-between align-items-center mb-0"
-        role="alert"
-      >
-        <span>{{ error }}</span>
-        <BaseButton size="sm" variant="outline-danger" @click="loadUsers">Retry</BaseButton>
-      </div>
-
-      <p v-else-if="users.length === 0" class="text-center text-muted py-5 mb-0">No users found</p>
+      <AppMessage v-else-if="error">
+        <div class="d-flex justify-content-between align-items-center gap-3 w-100">
+          <span>{{ error }}</span>
+          <AppButton
+            label="Retry"
+            size="small"
+            severity="danger"
+            variant="outlined"
+            @click="loadUsers"
+          />
+        </div>
+      </AppMessage>
 
       <template v-else>
-        <ParticipantsTable
-          :participants="users"
+        <UsersTable
+          :users="users"
           :start-index="(currentPage - 1) * PAGE_SIZE"
           @edit="editUser"
-          @delete="openDeleteModal"
+          @delete="openDeleteDialog"
         />
-        <BasePagination
+        <AppPaginator
           class="mt-4"
-          :current-page="currentPage"
-          :total-pages="totalPages"
+          :page="currentPage"
+          :rows="PAGE_SIZE"
+          :total-records="total"
           @change="changePage"
         />
       </template>
     </div>
   </div>
 
-  <BaseModal v-if="deletingUser" title="Delete participant" @close="closeDeleteModal">
-    <div v-if="deleteError" class="alert alert-danger" role="alert">{{ deleteError }}</div>
-    <p class="mb-0">
+  <AppConfirmDialog
+    v-model:visible="isDeleteDialogOpen"
+    header="Delete participant"
+    :loading="isDeleting"
+    @confirm="confirmDelete"
+  >
+    <template v-if="deletingUser">
       Are you sure you want to delete participant "{{ deletingUser.firstName }}
       {{ deletingUser.lastName }}", "{{ deletingUser.email }}"?
-    </p>
-    <template #footer>
-      <BaseButton variant="danger" :disabled="isDeleting" @click="confirmDelete">
-        {{ isDeleting ? 'Deleting...' : 'Yes' }}
-      </BaseButton>
-      <BaseButton variant="secondary" :disabled="isDeleting" @click="closeDeleteModal">
-        No
-      </BaseButton>
     </template>
-  </BaseModal>
+  </AppConfirmDialog>
 </template>

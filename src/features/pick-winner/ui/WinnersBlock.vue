@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { BaseButton } from '@/shared/ui'
+import { AppButton, AppChip } from '@/shared/ui'
 import { useWinnersStore } from '../model/winners.store'
-import WinnerItem from './WinnerItem.vue'
 
 const winnersStore = useWinnersStore()
 const { winners, canAddWinner } = storeToRefs(winnersStore)
@@ -10,30 +9,42 @@ const { addRandomWinner, removeWinner } = winnersStore
 </script>
 
 <template>
-  <div class="d-flex align-items-center gap-3">
-    <div class="form-control winners-field">
-      <WinnerItem
+  <div class="winners-block">
+    <div class="winners-block__field">
+      <AppChip
         v-for="winner in winners"
         :key="winner.id"
-        :name="`${winner.firstName} ${winner.lastName}`"
+        :label="`${winner.firstName} ${winner.lastName}`"
         @remove="removeWinner(winner.id)"
       />
-      <span class="text-muted">Winners</span>
+      <span class="winners-block__placeholder">Winners</span>
     </div>
 
-    <BaseButton class="text-nowrap" :disabled="!canAddWinner" @click="addRandomWinner">
-      New winner
-    </BaseButton>
+    <AppButton label="New winner" :disabled="!canAddWinner" @click="addRandomWinner" />
   </div>
 </template>
 
 <style scoped lang="scss">
-.winners-field {
+.winners-block {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 0.375rem;
-  min-height: 38px;
-  background-color: #fff;
+  gap: 1rem;
+
+  &__field {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.5rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--p-content-border-radius);
+    background-color: var(--p-content-background);
+  }
+
+  &__placeholder {
+    color: var(--p-text-muted-color);
+  }
 }
 </style>

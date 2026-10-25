@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { AppButton, AppMessage, AppSpinner } from '@/shared/ui'
 import { useUsersStore, type User } from '@/entities/user'
 
 interface DetailRow {
@@ -69,16 +70,18 @@ const isEditing = computed(() => route.name === 'user-edit')
 </script>
 
 <template>
-  <div v-if="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status" aria-label="Loading"></div>
-  </div>
+  <AppSpinner v-if="isLoading" />
 
   <div v-else-if="error" class="card">
     <div class="card-body p-4">
-      <div class="alert alert-danger" role="alert">{{ error }}</div>
-      <RouterLink :to="{ name: 'users' }" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back to users
-      </RouterLink>
+      <AppMessage class="mb-3">{{ error }}</AppMessage>
+      <AppButton
+        label="Back to users"
+        icon="bi bi-arrow-left"
+        severity="secondary"
+        variant="outlined"
+        :to="{ name: 'users' }"
+      />
     </div>
   </div>
 
@@ -104,16 +107,19 @@ const isEditing = computed(() => route.name === 'user-edit')
         </dl>
 
         <div class="d-flex flex-wrap gap-2">
-          <RouterLink :to="{ name: 'users' }" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Back to users
-          </RouterLink>
-          <RouterLink
+          <AppButton
+            label="Back to users"
+            icon="bi bi-arrow-left"
+            severity="secondary"
+            variant="outlined"
+            :to="{ name: 'users' }"
+          />
+          <AppButton
             v-if="!isEditing"
+            label="Edit"
+            icon="bi bi-pencil"
             :to="{ name: 'user-edit', params: { id } }"
-            class="btn btn-primary"
-          >
-            <i class="bi bi-pencil"></i> Edit
-          </RouterLink>
+          />
         </div>
       </div>
     </section>
@@ -127,7 +133,7 @@ const isEditing = computed(() => route.name === 'user-edit')
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  border: 1px solid var(--bs-border-color);
+  border: 1px solid var(--p-content-border-color);
   object-fit: cover;
 
   &--placeholder {
@@ -135,8 +141,8 @@ const isEditing = computed(() => route.name === 'user-edit')
     align-items: center;
     justify-content: center;
     font-size: 2.5rem;
-    color: var(--bs-secondary-color);
-    background-color: var(--bs-tertiary-bg);
+    color: var(--p-text-muted-color);
+    background-color: var(--p-content-hover-background);
   }
 }
 
@@ -147,7 +153,7 @@ const isEditing = computed(() => route.name === 'user-edit')
   margin-bottom: 1.5rem;
 
   dt {
-    color: var(--bs-secondary-color);
+    color: var(--p-text-muted-color);
     font-weight: 400;
   }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { AppButton } from '@/shared/ui'
 import { UserForm } from '@/features/user-form'
 import { useUsersStore, type CreateUserDto, type User } from '@/entities/user'
 
@@ -27,15 +28,21 @@ async function saveUser(data: CreateUserDto): Promise<void> {
     <div class="card-body p-4">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h6 fw-bold text-uppercase mb-0">Edit user</h2>
-        <RouterLink
+        <AppButton
+          label="Cancel"
+          size="small"
+          severity="secondary"
+          variant="outlined"
           :to="{ name: 'user-details', params: { id } }"
-          class="btn btn-sm btn-outline-secondary"
-        >
-          Cancel
-        </RouterLink>
+        />
       </div>
 
-      <UserForm :action="saveUser" :initial-data="user" submit-text="Update data" />
+      <UserForm
+        :action="saveUser"
+        :initial-data="user"
+        submit-text="Update data"
+        success-message="User updated"
+      />
     </div>
   </section>
 </template>

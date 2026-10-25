@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { AppButton } from '@/shared/ui'
+
 interface Technology {
   name: string
   description: string
@@ -36,15 +38,13 @@ const technologies: Technology[] = [
         with REST API and authorization.
       </p>
       <div class="d-flex flex-wrap gap-2">
-        <RouterLink to="/users" class="btn btn-primary">Open lottery</RouterLink>
-        <a
+        <AppButton label="Open lottery" to="/users" />
+        <AppButton
+          label="Project on GitHub"
+          icon="bi bi-github"
+          variant="outlined"
           :href="REPOSITORY_URL"
-          class="btn btn-outline-primary"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <i class="bi bi-github"></i> Project on GitHub
-        </a>
+        />
       </div>
     </div>
   </section>
@@ -79,8 +79,8 @@ const technologies: Technology[] = [
 
   &__item {
     padding: 0.75rem 1rem;
-    border: 1px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius);
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--p-content-border-radius);
   }
 }
 </style>

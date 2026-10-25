@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Button from 'primevue/button'
+import type { RouteLocationRaw } from 'vue-router'
 
 const {
   label,
@@ -10,6 +11,8 @@ const {
   icon,
   loading = false,
   disabled = false,
+  to,
+  href,
 } = defineProps<{
   label: string
   type?: 'button' | 'submit'
@@ -19,6 +22,8 @@ const {
   icon?: string
   loading?: boolean
   disabled?: boolean
+  to?: RouteLocationRaw
+  href?: string
 }>()
 
 const emit = defineEmits<{
@@ -28,7 +33,12 @@ const emit = defineEmits<{
 
 <template>
   <Button
-    :type="type"
+    :as="to ? 'router-link' : href ? 'a' : 'button'"
+    :to="to"
+    :href="href"
+    :target="href ? '_blank' : undefined"
+    :rel="href ? 'noopener noreferrer' : undefined"
+    :type="to || href ? undefined : type"
     :label="label"
     :severity="severity"
     :variant="variant"

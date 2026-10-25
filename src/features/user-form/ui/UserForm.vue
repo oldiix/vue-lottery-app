@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { ref, useId } from 'vue'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
-import { BaseButton } from '@/shared/ui'
-import { BaseInput } from '@/shared/ui'
+import { AppButton, AppInput, AppSelect, useNotify, type AppSelectOption } from '@/shared/ui'
 import type { CreateUserDto, Gender } from '@/entities/user'
 
 interface UserFormValues {
@@ -13,25 +11,32 @@ interface UserFormValues {
   username: string
   password: string
   age: string
-  gender: Gender | ''
+  gender: string
   phone: string
 }
 
 const PHONE_REGEXP = /^\+?[\d\s()-]{7,20}$/
 
+const GENDER_OPTIONS: AppSelectOption[] = [
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
+]
+
 const {
   action,
   initialData,
   submitText = 'Save',
+  successMessage = 'Saved',
   resetAfterSubmit = false,
 } = defineProps<{
   action: (data: CreateUserDto) => Promise<unknown>
   initialData?: Partial<CreateUserDto>
   submitText?: string
+  successMessage?: string
   resetAfterSubmit?: boolean
 }>()
 
-const uid = useId()
+const notify = useNotify()
 
 const validationSchema = yup.object({
   firstName: yup.string().trim().required('First name is required'),
@@ -48,7 +53,6 @@ const validationSchema = yup.object({
     .min(6, 'Password must be at least 6 characters'),
   age: yup
     .number()
-    // порожнє поле - це "не заповнено", а не помилка формату
     .transform((value, originalValue) => (originalValue === '' ? undefined : value))
     .typeError('Age must be a number')
     .required('Age is required')
@@ -90,48 +94,41 @@ const [age, ageAttrs] = defineField('age')
 const [gender, genderAttrs] = defineField('gender')
 const [phone, phoneAttrs] = defineField('phone')
 
-const submitError = ref('')
-
 const onSubmit = handleSubmit(async (values) => {
-  submitError.value = ''
   try {
     await action({
       ...values,
       age: Number(values.age),
       gender: values.gender as Gender,
     })
+    notify.success(successMessage)
     if (resetAfterSubmit) {
       resetForm()
     }
   } catch (error) {
-    submitError.value = error instanceof Error ? error.message : 'Something went wrong'
+    notify.error('Something went wrong', error instanceof Error ? error.message : undefined)
   }
 })
 </script>
 
 <template>
   <form novalidate @submit.prevent="onSubmit">
-    <div v-if="submitError" class="alert alert-danger" role="alert">{{ submitError }}</div>
-
     <div class="user-form__grid">
-      <BaseInput
-        :id="`${uid}-first-name`"
+      <AppInput
         v-model="firstName"
         v-bind="firstNameAttrs"
         label="First name"
         placeholder="Enter first name"
         :error="errors.firstName"
       />
-      <BaseInput
-        :id="`${uid}-last-name`"
+      <AppInput
         v-model="lastName"
         v-bind="lastNameAttrs"
         label="Last name"
         placeholder="Enter last name"
         :error="errors.lastName"
       />
-      <BaseInput
-        :id="`${uid}-email`"
+      <AppInput
         v-model="email"
         v-bind="emailAttrs"
         type="email"
@@ -139,16 +136,14 @@ const onSubmit = handleSubmit(async (values) => {
         placeholder="Enter email"
         :error="errors.email"
       />
-      <BaseInput
-        :id="`${uid}-username`"
+      <AppInput
         v-model="username"
         v-bind="usernameAttrs"
         label="Username"
         placeholder="Enter username"
         :error="errors.username"
       />
-      <BaseInput
-        :id="`${uid}-password`"
+      <AppInput
         v-model="password"
         v-bind="passwordAttrs"
         type="password"
@@ -157,8 +152,7 @@ const onSubmit = handleSubmit(async (values) => {
         autocomplete="new-password"
         :error="errors.password"
       />
-      <BaseInput
-        :id="`${uid}-age`"
+      <AppInput
         v-model="age"
         v-bind="ageAttrs"
         type="number"
@@ -166,25 +160,15 @@ const onSubmit = handleSubmit(async (values) => {
         placeholder="Enter age"
         :error="errors.age"
       />
-
-      <div class="mb-3">
-        <label :for="`${uid}-gender`" class="form-label">Gender</label>
-        <select
-          :id="`${uid}-gender`"
-          v-model="gender"
-          v-bind="genderAttrs"
-          class="form-select"
-          :class="{ 'is-invalid': errors.gender }"
-        >
-          <option value="" disabled>Choose gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-        <div v-if="errors.gender" class="invalid-feedback">{{ errors.gender }}</div>
-      </div>
-
-      <BaseInput
-        :id="`${uid}-phone`"
+      <AppSelect
+        v-model="gender"
+        v-bind="genderAttrs"
+        label="Gender"
+        placeholder="Choose gender"
+        :options="GENDER_OPTIONS"
+        :error="errors.gender"
+      />
+      <AppInput
         v-model="phone"
         v-bind="phoneAttrs"
         type="tel"
@@ -194,18 +178,23 @@ const onSubmit = handleSubmit(async (values) => {
       />
     </div>
 
-    <div class="d-flex justify-content-end mt-2">
-      <BaseButton type="submit" :disabled="isSubmitting">
-        {{ isSubmitting ? 'Saving...' : submitText }}
-      </BaseButton>
+    <div class="user-form__actions">
+      <AppButton type="submit" :label="submitText" :loading="isSubmitting" />
     </div>
   </form>
 </template>
 
 <style scoped lang="scss">
-.user-form__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  column-gap: 1rem;
+.user-form {
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    column-gap: 1rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
 }
 </style>

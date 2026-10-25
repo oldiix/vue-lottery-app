@@ -1,1 +1,1 @@
-export { default as ParticipantsTable } from './ui/ParticipantsTable.vue'
+export { default as UsersTable } from './ui/UsersTable.vue'

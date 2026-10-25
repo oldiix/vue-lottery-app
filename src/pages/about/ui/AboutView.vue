@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { AppButton } from '@/shared/ui'
+
 interface SkillGroup {
   title: string
   skills: string[]
@@ -28,14 +30,7 @@ const skillGroups: SkillGroup[] = [
     <div class="card-body p-4">
       <h1 class="h3 fw-bold mb-1">{{ FULL_NAME }}</h1>
       <p class="text-muted mb-3">Student, frontend developer</p>
-      <a
-        :href="GITHUB_URL"
-        class="btn btn-outline-primary"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <i class="bi bi-github"></i> GitHub profile
-      </a>
+      <AppButton label="GitHub profile" icon="bi bi-github" variant="outlined" :href="GITHUB_URL" />
     </div>
   </section>
 
@@ -55,9 +50,9 @@ const skillGroups: SkillGroup[] = [
 <style scoped lang="scss">
 .skill {
   padding: 0.25rem 0.75rem;
-  border: 1px solid var(--bs-primary);
+  border: 1px solid var(--p-primary-color);
   border-radius: 1rem;
-  color: var(--bs-primary);
+  color: var(--p-primary-color);
   font-size: 0.875rem;
 }
 </style>
