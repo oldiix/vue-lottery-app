@@ -2,6 +2,7 @@ import './styles/main.scss'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import { setupUi } from './providers/ui'
 import { useThemeStore } from '@/features/theme-toggle'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -15,7 +16,12 @@ const app = createApp(App)
 
 registerServices()
 
-app.use(createPinia())
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
+
+app.use(pinia)
+useThemeStore()
+
 app.use(router)
 setupUi(app)
 useThemeStore()
